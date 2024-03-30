@@ -63,13 +63,15 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        const degreesPerScore = 30; // 每旋转 30 度增加 1 分
         const numTeeth = 60;
         let angle = 0; // 初始化 angle 变量为 0
         let score = 0;
         let startAngle = 0;
         let lastDrawnAngle = 0;
         let lastVibrationAngle = 0;
+        let touchMoveInterval = null;
+        let lastTouchMoveTime = null;
+        let lastDelta = 0;
 
         let gearImageSrc = 'gear.png'; // 默认齿轮图片路径
         const gearImage = new Image();
@@ -102,15 +104,14 @@
 
         function updateScore(delta) {
             angle += delta;
-            if (angle - lastVibrationAngle >= degreesPerScore) {
+            const degreesPerScore = 30;
+            if (Math.abs(angle - lastVibrationAngle) >= degreesPerScore) {
                 lastVibrationAngle = angle;
                 if (supportsVibration) {
                     navigator.vibrate(50);
                 }
                 audio.play(); // 播放音效
-            }
-            if (angle % degreesPerScore < delta) { // 检查角度变化是否超过 degreesPerScore
-                score++; // 角度变化超过 degreesPerScore 时，增加分数
+                score++;
                 drawScoreText();
             }
             drawGear(); // 在更新角度后重新绘制齿轮
@@ -132,28 +133,45 @@
 
         function handleTouchStart(e) {
             e.preventDefault();
+            clearInterval(touchMoveInterval);
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
             startAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+            lastTouchMoveTime = Date.now();
         }
 
         function handleTouchMove(e) {
             e.preventDefault();
+            clearInterval(touchMoveInterval);
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
             const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+            const deltaTime = Date.now() - lastTouchMoveTime;
             const delta = currentAngle - startAngle;
+            lastDelta = delta / deltaTime; // 记录速度
             angle += delta;
             startAngle = currentAngle;
-            updateScore(delta);
+            lastTouchMoveTime = Date.now(); // 更新上次移动时间
+            updateScore(delta); // 更新分数
+            drawGear(); // 每次移动更新齿轮的位置
         }
 
         function handleTouchEnd(e) {
             e.preventDefault();
+            touchMoveInterval = setInterval(() => {
+                if (Math.abs(lastDelta) < 0.001) { // 当速度足够慢时停止
+                    clearInterval(touchMoveInterval);
+                } else {
+                    angle += lastDelta; // 根据速度调整旋转角度
+                    lastDelta *= 0.99; // 逐渐减小速度
+                    updateScore(lastDelta); // 更新分数
+                    drawGear(); // 更新齿轮位置
+                }
+            }, 16); // 60fps
         }
 
         gearImage.onload = function() {
