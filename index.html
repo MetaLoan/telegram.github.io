@@ -54,7 +54,7 @@
     </div>
 
     <script>
-        const supportsVibration = 'vibrate' in navigator;
+        const supportsVibration = 'vibrate' in navigator || 'webkitVibrate' in navigator;
 
         if (!supportsVibration) {
             alert('您的设备不支持震动效果');
@@ -108,7 +108,11 @@
             if (Math.abs(angle - lastVibrationAngle) >= degreesPerScore) {
                 lastVibrationAngle = angle;
                 if (supportsVibration) {
-                    navigator.vibrate(50);
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate(10);
+                    } else if ('webkitVibrate' in navigator) {
+                        navigator.webkitVibrate(10);
+                    }
                 }
                 audio.play(); // 播放音效
                 score++;
