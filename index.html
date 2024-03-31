@@ -159,10 +159,11 @@
             const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
             const deltaTime = Date.now() - lastTouchTime;
             const deltaAngle = currentAngle - lastAngle;
-            rotationSpeed = deltaAngle / deltaTime; // 更新旋转速度
+            rotationSpeed = deltaAngle; // 更新旋转速度
             angle += deltaAngle; // 更新角度
             lastAngle = currentAngle;
             lastTouchTime = Date.now();
+            updateScore(deltaAngle); // 更新游戏数值
         }
 
         function handleTouchEnd(e) {
@@ -174,6 +175,7 @@
             if (!isTouching && Math.abs(rotationSpeed) > 0.001) { // 自然减速
                 rotationSpeed *= 0.99; // 减速因子
                 angle += rotationSpeed; // 更新角度
+                updateScore(rotationSpeed); // 更新游戏数值
             }
             drawGear(); // 更新齿轮位置
             requestAnimationFrame(update); // 请求下一帧动画
