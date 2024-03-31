@@ -182,10 +182,10 @@
             const deltaTime = Date.now() - lastTouchMoveTime;
             const delta = currentAngle - startAngle;
             lastDelta = delta / deltaTime; // 记录速度
-            angle += delta;
+            // angle += delta; // 不直接加delta，改为在touchend中更新
             startAngle = currentAngle;
             lastTouchMoveTime = Date.now(); // 更新上次移动时间
-            updateScore(delta); // 更新分数
+            // updateScore(delta); // 更新分数，改为在touchend中更新
             drawGear(); // 每次移动更新齿轮的位置
         }
 
@@ -195,13 +195,15 @@
                 if (Math.abs(lastDelta) < 0.001) { // 当速度足够慢时停止
                     clearInterval(touchMoveInterval);
                 } else {
-                    angle += lastDelta; // 根据速度调整旋转角度
+                    // angle += lastDelta; // 根据速度调整旋转角度，改为根据平均速度更新
                     lastDelta *= 0.99; // 逐渐减小速度
                     updateScore(lastDelta); // 更新分数
-                    drawGear(); // 更新齿轮位置
+                    // drawGear(); // 更新齿轮位置，改为在handleTouchMove中更新
                     // 计算平均速度
                     averageSpeed = (averageSpeed * 9 + lastDelta) / 10; // 平均速度取前10次速度的加权平均值
                     speedDisplay.innerText = `Speed: ${averageSpeed.toFixed(2)}`; // 在速度显示元素中显示平均速度，保留两位小数
+                    angle += averageSpeed; // 根据平均速度更新角度
+                    drawGear(); // 更新齿轮位置
                 }
             }, 16); // 60fps
         }
