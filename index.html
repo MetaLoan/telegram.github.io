@@ -4,7 +4,6 @@
     <title>CIRCLE IT</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* CSS 样式保持不变 */
         body {
             margin: 0;
             padding: 0;
@@ -18,15 +17,57 @@
             background-size: cover;
             background-position: center;
         }
-        /* 省略其他样式 */
+        canvas {
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+        #score {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: bold;
+            white-space: nowrap;
+            color: white;
+        }
+        .thumbnail {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .toggle-container {
+            position: absolute;
+            top: 100px;
+            display: flex;
+        }
+        .toggle-container label {
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
     <div id="score">CIRCOIN: 0</div>
-    <!-- 省略其他元素 -->
+
+    <div>
+        <img class="thumbnail" src="pizza.png" onclick="changeGear('pizza.png')" alt="Pizza Gear">
+        <img class="thumbnail" src="wheel.png" onclick="changeGear('wheel.png')" alt="Wheel Gear">
+        <img class="thumbnail" src="cake.png" onclick="changeGear('cake.png')" alt="Cake Gear">
+        <img class="thumbnail" src="emoji.png" onclick="changeGear('emoji.png')" alt="Emoji Gear">
+        <img class="thumbnail" src="gear.png" onclick="changeGear('gear.png')" alt="Default Gear">
+    </div>
+
+    <div class="toggle-container">
+        <label for="vibrateToggle">Vibrate:</label>
+        <input type="checkbox" id="vibrateToggle" checked onchange="toggleVibration(this)">
+        <label for="soundToggle">Sound:</label>
+        <input type="checkbox" id="soundToggle" checked onchange="toggleSound(this)">
+    </div>
+
     <script>
-        // JavaScript 代码
         let vibrationEnabled = true;
         let soundEnabled = true;
         let rotationSpeed = 0;
