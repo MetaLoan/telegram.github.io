@@ -81,10 +81,7 @@
         const numTeeth = 60;
         let angle = 0; // 初始化 angle 变量为 0
         let score = 0;
-        let startAngle = 0;
-        let lastDrawnAngle = 0;
         let lastVibrationAngle = 0;
-        let lastTouchMoveTime = null;
         let lastDelta = 0;
         let averageSpeed = 0; // 平均速度初始值为0
         const speedDisplay = document.getElementById('speedDisplay'); // 获取速度显示元素
@@ -115,11 +112,10 @@
             ctx.drawImage(gearImage, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
 
             ctx.restore();
-            lastDrawnAngle = angle;
         }
 
-        function updateScore(delta) {
-            angle += delta;
+        function updateScore() {
+            angle += averageSpeed; // 根据平均速度更新角度
             const degreesPerScore = 30;
             if (Math.abs(angle - lastVibrationAngle) >= degreesPerScore) {
                 lastVibrationAngle = angle;
@@ -155,6 +151,23 @@
             soundEnabled = checkbox.checked;
         }
 
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+            const deltaTime = Date.now() - lastTouchMoveTime;
+            const delta = currentAngle - startAngle;
+            lastDelta = delta / deltaTime; // 记录速度
+            startAngle = currentAngle;
+            lastTouchMoveTime = Date.now(); // 更新上次移动时间
+            // 计算平均速度
+            averageSpeed = (averageSpeed * 9 + lastDelta) / 10; // 平均速度取前10次速度的加权平均值
+            speedDisplay.innerText = `Speed: ${averageSpeed.toFixed(2)}`; // 在速度显示元素中显示平均速度，保留两位小数
+        }
+
         canvas.addEventListener('touchstart', handleTouchStart);
         canvas.addEventListener('touchmove', handleTouchMove);
         canvas.addEventListener('touchend', handleTouchEnd);
@@ -169,35 +182,10 @@
             lastTouchMoveTime = Date.now();
         }
 
-        function handleTouchMove(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
-            const deltaTime = Date.now() - lastTouchMoveTime;
-            const delta = currentAngle - startAngle;
-            lastDelta = delta / deltaTime; // 记录速度
-            startAngle = currentAngle;
-            lastTouchMoveTime = Date.now(); // 更新上次移动时间
-            // 实时更新齿轮的角度
-            angle += lastDelta;
-            updateScore(lastDelta); // 更新分数
-            drawGear(); // 每次移动更新齿轮的位置
-        }
-
         function handleTouchEnd(e) {
             e.preventDefault();
-            // 不再使用定时器，因为我们要实时更新齿轮的角度
-            lastDelta *= 0.99; // 逐渐减小速度
-            updateScore(lastDelta); // 更新分数
-            // drawGear(); // 更新齿轮位置，改为在handleTouchMove中更新
-            // 计算平均速度
-            averageSpeed = (averageSpeed * 9 + lastDelta) / 10; // 平均速度取前10次速度的加权平均值
-            speedDisplay.innerText = `Speed: ${averageSpeed.toFixed(2)}`; // 在速度显示元素中显示平均速度，保留两位小数
-            angle += averageSpeed; // 根据平均速度更新角度
-            drawGear(); // 更新齿轮位置
+            // 更新分数
+            updateScore();
         }
 
         gearImage.onload = function() {
