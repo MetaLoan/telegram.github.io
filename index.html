@@ -80,7 +80,6 @@
         let startAngle = 0;
         let lastDrawnAngle = 0;
         let lastVibrationAngle = 0;
-        let touchMoveInterval = null;
         let lastDelta = 0;
 
         let gearImageSrc = 'gear.png';
@@ -89,7 +88,7 @@
 
         const audio = new Audio('vibration_sound.mp3');
 
-        let touchMoveDistances = [];
+        let touchMoveAngles = [];
         let touchMoveTimes = [];
 
         function drawGear() {
@@ -150,13 +149,12 @@
 
         function handleTouchStart(e) {
             e.preventDefault();
-            clearInterval(touchMoveInterval);
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
             startAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
-            touchMoveDistances = [];
+            touchMoveAngles = [];
             touchMoveTimes = [];
         }
 
@@ -170,16 +168,22 @@
 
             const currentTime = Date.now();
             touchMoveTimes.push(currentTime);
-            touchMoveDistances.push(currentAngle - startAngle);
+            touchMoveAngles.push(currentAngle);
 
-            if (touchMoveTimes.length > 10) {
+            // 只保留前两秒内的数据
+            const twoSecondsAgo = currentTime - 2000;
+            while (touchMoveTimes.length > 0 && touchMoveTimes[0] < twoSecondsAgo) {
                 touchMoveTimes.shift();
-                touchMoveDistances.shift();
+                touchMoveAngles.shift();
             }
 
-            const deltaTime = touchMoveTimes[touchMoveTimes.length - 1] - touchMoveTimes[0];
-            const deltaDistance = touchMoveDistances.reduce((acc, val) => acc + val, 0);
-            const averageSpeed = deltaDistance / deltaTime;
+            if (touchMoveTimes.length > 1) {
+                const deltaTime = (touchMoveTimes[touchMoveTimes.length - 1] - touchMoveTimes[0]) / 1000; // 转换为秒
+                const deltaAngle = touchMoveAngles[touchMoveAngles.length - 1] - touchMoveAngles[0];
+                const averageSpeed = deltaAngle / deltaTime;
+
+                lastDelta = averageSpeed;
+            }
 
             const delta = currentAngle - startAngle;
             angle += delta;
@@ -192,29 +196,8 @@
         function handleTouchEnd(e) {
             e.preventDefault();
 
-            let decelerationRate = 0.99;
-            const decelerate = () => {
-                if (Math.abs(lastDelta) < 1) {
-                    clearInterval(touchMoveInterval);
-                    let linearDeceleration = setInterval(() => {
-                        if (Math.abs(lastDelta) < 0.1) {
-                            clearInterval(linearDeceleration);
-                        } else {
-                            lastDelta *= 0.9;
-                            angle += lastDelta;
-                            updateScore(lastDelta);
-                            drawGear();
-                        }
-                    }, 1000);
-                } else {
-                    angle += lastDelta;
-                    lastDelta *= decelerationRate;
-                    updateScore(lastDelta);
-                    drawGear();
-                }
-            };
-
-            touchMoveInterval = setInterval(decelerate, 16);
+            // 当用户停止触摸屏幕时，将速度重置为0
+            lastDelta = 0;
         }
 
         gearImage.onload = function() {
