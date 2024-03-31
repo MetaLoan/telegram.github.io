@@ -194,8 +194,18 @@
 
             let decelerationRate = 0.99;
             const decelerate = () => {
-                if (Math.abs(lastDelta) < 0.001) {
+                if (Math.abs(lastDelta) < 1) {
                     clearInterval(touchMoveInterval);
+                    let linearDeceleration = setInterval(() => {
+                        if (Math.abs(lastDelta) < 0.1) {
+                            clearInterval(linearDeceleration);
+                        } else {
+                            lastDelta *= 0.9;
+                            angle += lastDelta;
+                            updateScore(lastDelta);
+                            drawGear();
+                        }
+                    }, 1000);
                 } else {
                     angle += lastDelta;
                     lastDelta *= decelerationRate;
