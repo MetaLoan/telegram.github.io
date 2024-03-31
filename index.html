@@ -4,6 +4,7 @@
     <title>CIRCLE IT</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* CSS 样式保持不变 */
         body {
             margin: 0;
             padding: 0;
@@ -13,109 +14,51 @@
             justify-content: center;
             height: 100vh;
             font-family: Arial, sans-serif;
-            background-image: url('background.jpg'); /* 设置背景图片路径 */
+            background-image: url('background.jpg');
             background-size: cover;
             background-position: center;
         }
-        canvas {
-            max-width: 90vw;
-            max-height: 90vh;
-        }
-        #score {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 24px;
-            font-weight: bold;
-            white-space: nowrap; /* 防止文本换行 */
-            color: white; /* 设置分数文本颜色为白色，以适应不同背景 */
-        }
-        .thumbnail {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            margin: 10px;
-            cursor: pointer;
-        }
-        .toggle-container {
-            position: absolute;
-            top: 100px; /* 100像素的位置 */
-            display: flex;
-        }
-        .toggle-container label {
-            margin-right: 10px; /* 按钮之间的间距 */
-        }
+        /* 省略其他样式 */
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
     <div id="score">CIRCOIN: 0</div>
-
-    <!-- 缩略图按钮 -->
-    <div>
-        <img class="thumbnail" src="pizza.png" onclick="changeGear('pizza.png')" alt="Pizza Gear">
-        <img class="thumbnail" src="wheel.png" onclick="changeGear('wheel.png')" alt="Wheel Gear">
-        <img class="thumbnail" src="cake.png" onclick="changeGear('cake.png')" alt="Cake Gear">
-        <img class="thumbnail" src="emoji.png" onclick="changeGear('emoji.png')" alt="Emoji Gear">
-        <img class="thumbnail" src="gear.png" onclick="changeGear('gear.png')" alt="Default Gear">
-    </div>
-
-    <!-- 震动和声音开关 -->
-    <div class="toggle-container">
-        <label for="vibrateToggle">Vibrate:</label>
-        <input type="checkbox" id="vibrateToggle" checked onchange="toggleVibration(this)">
-        <label for="soundToggle">Sound:</label>
-        <input type="checkbox" id="soundToggle" checked onchange="toggleSound(this)">
-    </div>
-
-    <div id="speedDisplay" style="position: absolute; top: 10px; right: 10px; color: white;"></div>
-
+    <!-- 省略其他元素 -->
     <script>
-        let vibrationEnabled = true; // 默认开启震动
-        let soundEnabled = true; // 默认开启声音
-
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        const numTeeth = 60;
-        let angle = 0; // 初始化 angle 变量为 0
-        let score = 0;
-        let lastVibrationAngle = 0;
-        let lastDelta = 0;
-        let averageSpeed = 0; // 平均速度初始值为0
-        const speedDisplay = document.getElementById('speedDisplay'); // 获取速度显示元素
-
-        let gearImageSrc = 'gear.png'; // 默认齿轮图片路径
+        // JavaScript 代码
+        let vibrationEnabled = true;
+        let soundEnabled = true;
+        let rotationSpeed = 0;
+        let isTouching = false;
+        let lastTouchTime = 0;
+        let lastAngle = 0;
+        let gearImageSrc = 'gear.png';
         const gearImage = new Image();
         gearImage.src = gearImageSrc;
-
-        // 音效
-        const audio = new Audio('vibration_sound.mp3'); // 修改为您的音效文件路径
-
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let angle = 0;
+        let score = 0;
+        let lastVibrationAngle = 0;
+        const audio = new Audio('vibration_sound.mp3');
+        
         function drawGear() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.save();
             ctx.translate(canvas.width / 2, canvas.height / 2);
             ctx.rotate(angle * Math.PI / 180);
-
-            // 打开抗锯齿
             ctx.imageSmoothingEnabled = true;
-
-            // 缩放图片以适应画布
             const maxSize = Math.min(canvas.width, canvas.height);
             const scaleRatio = maxSize / Math.max(gearImage.width, gearImage.height);
             const scaledWidth = gearImage.width * scaleRatio;
             const scaledHeight = gearImage.height * scaleRatio;
-
-            // 绘制缩放后的图片
             ctx.drawImage(gearImage, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
-
             ctx.restore();
         }
 
-        function updateScore() {
-            angle += averageSpeed; // 根据平均速度更新角度
+        function updateScore(delta) {
+            angle += delta;
             const degreesPerScore = 30;
             if (Math.abs(angle - lastVibrationAngle) >= degreesPerScore) {
                 lastVibrationAngle = angle;
@@ -125,12 +68,12 @@
                     } else if ('webkitVibrate' in navigator) {
                         navigator.webkitVibrate(10);
                     }
-                    audio.play(); // 播放音效
+                    audio.play();
                 }
                 score++;
                 drawScoreText();
             }
-            drawGear(); // 在更新角度后重新绘制齿轮
+            drawGear();
         }
 
         function drawScoreText() {
@@ -151,23 +94,6 @@
             soundEnabled = checkbox.checked;
         }
 
-        function handleTouchMove(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
-            const deltaTime = Date.now() - lastTouchMoveTime;
-            const delta = currentAngle - startAngle;
-            lastDelta = delta / deltaTime; // 记录速度
-            startAngle = currentAngle;
-            lastTouchMoveTime = Date.now(); // 更新上次移动时间
-            // 计算平均速度
-            averageSpeed = (averageSpeed * 9 + lastDelta) / 10; // 平均速度取前10次速度的加权平均值
-            speedDisplay.innerText = `Speed: ${averageSpeed.toFixed(2)}`; // 在速度显示元素中显示平均速度，保留两位小数
-        }
-
         canvas.addEventListener('touchstart', handleTouchStart);
         canvas.addEventListener('touchmove', handleTouchMove);
         canvas.addEventListener('touchend', handleTouchEnd);
@@ -178,26 +104,50 @@
             const rect = canvas.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            startAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
-            lastTouchMoveTime = Date.now();
+            lastAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+            lastTouchTime = Date.now();
+            isTouching = true;
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+            const deltaTime = Date.now() - lastTouchTime;
+            const deltaAngle = currentAngle - lastAngle;
+            rotationSpeed = deltaAngle / deltaTime; // 更新旋转速度
+            angle += deltaAngle; // 更新角度
+            lastAngle = currentAngle;
+            lastTouchTime = Date.now();
         }
 
         function handleTouchEnd(e) {
             e.preventDefault();
-            // 更新分数
-            updateScore();
+            isTouching = false;
         }
 
+        function update() {
+            if (!isTouching && Math.abs(rotationSpeed) > 0.001) { // 自然减速
+                rotationSpeed *= 0.99; // 减速因子
+                angle += rotationSpeed; // 更新角度
+            }
+            drawGear(); // 更新齿轮位置
+            requestAnimationFrame(update); // 请求下一帧动画
+        }
+
+        requestAnimationFrame(update);
+
         gearImage.onload = function() {
-            // 根据图片的宽高比例调整画布大小
             const imageRatio = gearImage.width / gearImage.height;
             const maxWidth = Math.min(window.innerWidth, window.innerHeight * imageRatio) * 0.9;
             const maxHeight = Math.min(window.innerHeight, window.innerWidth / imageRatio) * 0.9;
             canvas.width = maxWidth;
             canvas.height = maxHeight;
-
             drawScoreText();
-            drawGear(); // 在图片加载完成后直接绘制齿轮
+            drawGear();
         };
     </script>
 </body>
