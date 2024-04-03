@@ -47,6 +47,8 @@
             margin-right: 10px;
         }
     </style>
+    <!-- 确保引入 Telegram WebApp 库 -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
@@ -69,13 +71,11 @@
 
     <script>
         let vibrationEnabled = true;
-        let soundEnabled = false; // 默认关闭音效
+        let soundEnabled = false;
         let rotationSpeed = 0;
         let isTouching = false;
         let lastTouchTime = 0;
         let lastAngle = 0;
-        let lastTouchX = 0; // 记录上一个触摸点的位置
-        let lastTouchY = 0;
         let gearImageSrc = 'gear.png';
         const gearImage = new Image();
         gearImage.src = gearImageSrc;
@@ -84,14 +84,11 @@
         let angle = 0;
         let score = 0;
         let lastVibrationAngle = 0;
-        const audioPool = []; // 音频播放池
-        const audioPoolSize = 100; // 池大小
-        const minAudioInterval = 50; // 最小播放间隔(毫秒)
-        const minVibrationInterval = 50; // 最小震动间隔(毫秒)
-        let lastAudioTime = 0; // 上次播放时间
-        let lastVibrationTime = 0; // 上次震动时间
+        const audioPool = [];
+        const audioPoolSize = 100;
+        const minAudioInterval = 50;
+        let lastAudioTime = 0;
 
-        // 创建音频播放池
         for (let i = 0; i < audioPoolSize; i++) {
             const audio = new Audio('vibration_sound.mp3');
             audioPool.push(audio);
@@ -111,21 +108,22 @@
             ctx.restore();
         }
 
+        function triggerShortVibration() {
+            Telegram.WebApp.showNotification('', {
+                type: 'vibrateNotification',
+                duration: 50,
+            });
+        }
+
         function updateScore(delta) {
             angle += delta;
             const degreesPerScore = 30;
             if (Math.abs(angle - lastVibrationAngle) >= degreesPerScore) {
                 lastVibrationAngle = angle;
-                const now = Date.now();
-                if (vibrationEnabled && now - lastVibrationTime >= minVibrationInterval) { // 检查震动开关和震动间隔
-                    lastVibrationTime = now;
-                    if ('vibrate' in navigator) {
-                        navigator.vibrate(10);
-                    } else if ('webkitVibrate' in navigator) {
-                        navigator.webkitVibrate(10);
-                    }
+                if (vibrationEnabled) {
+                    triggerShortVibration();
                 }
-                if (soundEnabled) { // 检查音效开关
+                if (soundEnabled) {
                     playAudio();
                 }
                 score++;
@@ -152,14 +150,13 @@
             vibrationEnabled = checkbox.checked;
         }
 
-        // 播放音频
         function playAudio() {
             const now = Date.now();
-            if (now - lastAudioTime >= minAudioInterval) { // 检查间隔
+            if (now - lastAudioTime >= minAudioInterval) {
                 lastAudioTime = now;
                 for (let i = 0; i < audioPool.length; i++) {
                     const audio = audioPool[i];
-                    if (audio.paused) { // 检查状态
+                    if (audio.paused) {
                         audio.play().catch(err => console.error('Failed to play audio:', err));
                         break;
                     }
@@ -177,8 +174,6 @@
             const rect = canvas.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            lastTouchX = touch.clientX; // 记录触摸点的位置
-            lastTouchY = touch.clientY;
             lastAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
             lastTouchTime = Date.now();
             isTouching = true;
@@ -193,13 +188,11 @@
             const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
             const deltaTime = Date.now() - lastTouchTime;
             const deltaAngle = currentAngle - lastAngle;
-            rotationSpeed = deltaAngle; // 更新旋转速度
-            angle += deltaAngle; // 更新角度
+            rotationSpeed = deltaAngle;
+            angle += deltaAngle;
             lastAngle = currentAngle;
             lastTouchTime = Date.now();
-            updateScore(deltaAngle); // 更新游戏数值
-            lastTouchX = touch.clientX; // 更新触摸点的位置
-            lastTouchY = touch.clientY;
+            updateScore(deltaAngle);
         }
 
         function handleTouchEnd(e) {
@@ -208,13 +201,13 @@
         }
 
         function update() {
-            if (!isTouching && Math.abs(rotationSpeed) > 0.001) { // 自然减速
-                rotationSpeed *= 0.99; // 减速因子
-                angle += rotationSpeed; // 更新角度
-                updateScore(rotationSpeed); // 更新游戏数值
+            if (!isTouching && Math.abs(rotationSpeed) > 0.001) {
+                rotationSpeed *= 0.99;
+                angle += rotationSpeed
+                updateScore(rotationSpeed);
             }
-            drawGear(); // 更新齿轮位置
-            requestAnimationFrame(update); // 请求下一帧动画
+            drawGear();
+            requestAnimationFrame(update);
         }
 
         requestAnimationFrame(update);
