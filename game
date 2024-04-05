@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rain Shapes</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            overflow: hidden; /* 防止页面出现滚动条 */
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden; /* 防止形状溢出页面 */
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            z-index: 10;
+        }
+
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            z-index: 10;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: white;
+            display: none;
+            z-index: 10;
+        }
+
+        .shape-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .shape {
+            position: absolute;
+            cursor: pointer;
+            border-radius: 50%;
+            background-color: blue;
+            width: 50px;
+            height: 50px;
+            animation: rain 3s linear infinite;
+        }
+
+        .circle {
+            border-radius: 50%;
+        }
+
+        .square {
+            border-radius: 0%;
+        }
+
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 50px solid red;
+        }
+
+        @keyframes rain {
+            0% {
+                transform: translateY(-50px);
+            }
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="score">Score: <span id="score-value">0</span></div>
+        <div id="timer">Time: <span id="timer-value">30</span></div>
+        <div id="game-over">GAME OVER</div>
+        <div class="shape-container"></div>
+    </div>
+
+    <script>
+        const scoreText = document.getElementById('score-value');
+        const timerText = document.getElementById('timer-value');
+        const gameOverText = document.getElementById('game-over');
+        const shapeContainer = document.querySelector('.shape-container');
+
+        let score = 0;
+        let timer = 30;
+        let isGameOver = false;
+
+        function updateScore() {
+            scoreText.textContent = score;
+        }
+
+        function updateTimer() {
+            timerText.textContent = timer;
+        }
+
+        function spawnShape() {
+            const shapes = ['circle', 'square', 'triangle'];
+            const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
+            const shape = document.createElement('div');
+            shape.className = 'shape ' + randomShape;
+            shape.addEventListener('mousedown', handleClick);
+            shape.addEventListener('touchstart', handleClick);
+            shape.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+            shape.style.top = '-50px'; /* 从顶部开始下落 */
+            shapeContainer.appendChild(shape);
+            let duration;
+            switch (randomShape) {
+                case 'circle':
+                    duration = 3000 / 1; // 根据点击得分动态调整下落速度
+                    break;
+                case 'square':
+                    duration = 3000 / 2;
+                    break;
+                case 'triangle':
+                    duration = 3000 / 5;
+                    break;
+            }
+            shape.style.animation = `rain ${duration}ms linear infinite`; // 设置动画
+            setTimeout(() => {
+                shape.remove();
+            }, 5000);
+        }
+
+        function handleClick() {
+            if (!isGameOver) {
+                const randomShape = this.classList.contains('circle') ? 'circle' : this.classList.contains('square') ? 'square' : 'triangle';
+                switch (randomShape) {
+                    case 'circle':
+                        score += 10;
+                        break;
+                    case 'square':
+                        score += 20;
+                        break;
+                    case 'triangle':
+                        score += 50;
+                        break;
+                }
+                updateScore();
+                this.remove();
+            }
+        }
+
+        function gameLoop() {
+            if (!isGameOver) {
+                timer--;
+                updateTimer();
+                if (timer <= 0) {
+                    gameOver();
+                }
+            }
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            gameOverText.style.display = 'block';
+            clearInterval(shapeInterval);
+        }
+
+        const shapeInterval = setInterval(spawnShape, 1000);
+        setInterval(gameLoop, 1000);
+    </script>
+</body>
+</html>
