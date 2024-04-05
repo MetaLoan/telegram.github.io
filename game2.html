@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorful Ball Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block; /* Remove margin in the bottom */
+            background: #fafafa;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let score = 0;
+    let timeLeft = 30; // seconds
+    const fontSize = 20; // Default font size
+    const fontColor = '#808080'; // Neutral gray color for font
+
+    const balls = [
+        { size: 60, speed: 1, score: 1, imageSrc: 'ballImageSrc1.png', particleColor: '#FF0000' },
+        { size: 45, speed: 2, score: 2, imageSrc: 'ballImageSrc2.png', particleColor: '#0000FF' },
+        { size: 30, speed: 3, score: 3, imageSrc: 'ballImageSrc3.png', particleColor: '#FFFF00' }
+    ];
+
+    const backgroundImageSrc = 'backgroundImageSrc.jpg';
+    let backgroundImage;
+
+    const particles = [];
+    let gameBalls = [];
+
+    function loadImages() {
+        backgroundImage = new Image();
+        backgroundImage.src = backgroundImageSrc;
+        backgroundImage.onload = function() {
+            // Ensure the background image is loaded before starting the game
+            startGame();
+        };
+
+        balls.forEach(ball => {
+            const img = new Image();
+            img.onload = function() {
+                let scale = Math.min(ball.size / img.width, ball.size / img.height);
+                ball.image = img;
+                ball.scaledWidth = img.width * scale;
+                ball.scaledHeight = img.height * scale;
+            };
+            img.src = ball.imageSrc;
+        });
+    }
+
+    function spawnBall() {
+        const ballType = balls[Math.floor(Math.random() * balls.length)];
+        const newBall = {
+            ...ballType,
+            x: Math.random() * (canvas.width - ballType.size) + ballType.size / 2,
+            y: -ballType.size,
+            opacity: 1
+        };
+        gameBalls.push(newBall);
+    }
+
+    function explodeBall(ball, x, y) {
+        for (let i = 0; i < 30; i++) {
+            particles.push({
+                x: x,
+                y: y,
+                speedX: (Math.random() - 0.5) * 5,
+                speedY: (Math.random() - 0.5) * 5,
+                color: ball.particleColor,
+                opacity: 1
+            });
+        }
+        score += ball.score;
+    }
+
+    function handleInteraction(event) {
+        let x, y;
+        if (event.type === 'click') {
+            x = event.clientX;
+            y = event.clientY;
+        } else if (event.type === 'touchstart') {
+            x = event.touches[0].clientX;
+            y = event.touches[0].clientY;
+        }
+
+        gameBalls.forEach((ball, index) => {
+            const distance = Math.sqrt(Math.pow(x - ball.x, 2) + Math.pow(y - ball.y, 2));
+            if (distance < ball.size / 2) {
+                explodeBall(ball, ball.x, ball.y);
+                gameBalls.splice(index, 1);
+            }
+        });
+    }
+
+    function updateGame() {
+        // Draw background image
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+
+        // Update and draw balls
+        gameBalls.forEach((ball, index) => {
+            ball.y += ball.speed;
+            ball.opacity = 1 - (ball.y / canvas.height);
+            if (ball.opacity <= 0) {
+                gameBalls.splice(index, 1);
+            } else {
+                ctx.globalAlpha = ball.opacity;
+                ctx.drawImage(ball.image, ball.x - ball.scaledWidth / 2, ball.y - ball.scaledHeight / 2, ball.scaledWidth, ball.scaledHeight);
+            }
+        });
+
+        // Draw score and time left
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = fontColor;
+        ctx.font = `${fontSize}px Arial`;
+        ctx.fillText(`Score: ${score}`, 10, 30);
+        ctx.fillText(`Time Left: ${timeLeft}`, canvas.width - 150, 30);
+
+        // Update particles
+        particles.forEach((particle, index) => {
+            particle.x += particle.speedX;
+            particle.y += particle.speedY;
+            particle.opacity -= 0.05;
+            if (particle.opacity <= 0) {
+                particles.splice(index, 1);
+            } else {
+                ctx.globalAlpha = particle.opacity;
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(particle.x, particle.y, 5, 5);
+            }
+        });
+
+        if (timeLeft <= 0) {
+            ctx.fillStyle = fontColor;
+            ctx.font = '40px Arial';
+            ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
+            clearInterval(gameInterval);
+        }
+    }
+
+    function startGame() {
+        setInterval(updateGame, 1000 / 60);
+        setInterval(spawnBall, 1000);
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+            }
+        }, 1000);
+    }
+
+    canvas.addEventListener('click', handleInteraction);
+    canvas.addEventListener('touchstart', handleInteraction);
+
+    loadImages();
+</script>
+</body>
+</html>
