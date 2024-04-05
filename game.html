@@ -60,17 +60,18 @@
             position: absolute;
             cursor: pointer;
             border-radius: 50%;
+            background-color: blue;
             width: 50px;
             height: 50px;
             animation: rain 3s linear infinite;
         }
 
         .circle {
-            background-color: yellow; /* 圆形设置为黄色 */
+            border-radius: 50%;
         }
 
         .square {
-            background-color: purple; /* 正方形设置为紫色 */
+            border-radius: 0%;
         }
 
         .triangle {
@@ -78,13 +79,14 @@
             height: 0;
             border-left: 25px solid transparent;
             border-right: 25px solid transparent;
-            border-bottom: 50px solid green; /* 三角形设置为绿色 */
+            border-bottom: 50px solid red;
         }
 
         .explosion {
             position: absolute;
             width: 10px;
             height: 10px;
+            background-color: yellow;
             border-radius: 50%;
             animation: explode 1s ease-out;
         }
@@ -186,13 +188,11 @@
 
         function createExplosion(shape) {
             const explosionCount = 20;
-            const explosionColor = window.getComputedStyle(shape).backgroundColor; // 获取形状的背景颜色
             for (let i = 0; i < explosionCount; i++) {
                 const explosion = document.createElement('div');
                 explosion.className = 'explosion';
                 explosion.style.left = shape.style.left;
                 explosion.style.top = shape.style.top;
-                explosion.style.backgroundColor = explosionColor; // 使用形状的背景颜色
                 explosion.style.animationDelay = Math.random() * 500 + 'ms'; // 随机延迟
                 shapeContainer.appendChild(explosion);
                 setTimeout(() => {
@@ -219,6 +219,99 @@
 
         const shapeInterval = setInterval(spawnShape, 1000);
         setInterval(gameLoop, 1000);
+    </script>
+
+    <script>
+        function clickEffect() {
+            let balls = [];
+            let width, height;
+            const colours = ["#F73859", "#14FFEC", "#00E0FF", "#FF99FE", "#FAF15D"];
+            const canvas = document.createElement("canvas");
+            document.body.appendChild(canvas);
+            canvas.setAttribute("style", "width: 100%; height: 100%; top: 0; left: 0; z-index: 99999; position: fixed; pointer-events: none;");
+            const pointer = document.createElement("span");
+            pointer.classList.add("pointer");
+            document.body.appendChild(pointer);
+
+            if (canvas.getContext && window.addEventListener) {
+                const ctx = canvas.getContext("2d");
+                updateSize();
+                window.addEventListener('resize', updateSize, false);
+                loop();
+                window.addEventListener("mousemove", function(e) {
+                    let x = e.clientX;
+                    let y = e.clientY;
+                    pointer.style.top = y + "px";
+                    pointer.style.left = x + "px";
+                }, false);
+            } else {
+                console.log("canvas or addEventListener is unsupported!");
+            }
+
+            function updateSize() {
+                canvas.width = window.innerWidth * 2;
+                canvas.height = window.innerHeight * 2;
+                canvas.style.width = window.innerWidth + 'px';
+                canvas.style.height = window.innerHeight + 'px';
+                width = (canvas.width = window.innerWidth);
+                height = (canvas.height = window.innerHeight);
+            }
+
+            class Ball {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.angle = Math.PI * 2 * Math.random();
+                    this.multiplier = randBetween(6, 12);
+                    this.vx = (this.multiplier + Math.random() * 0.5) * Math.cos(this.angle);
+                    this.vy = (this.multiplier + Math.random() * 0.5) * Math.sin(this.angle);
+                    this.r = randBetween(8, 12) + 3 * Math.random();
+                    this.color = colours[Math.floor(Math.random() * colours.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.r -= 0.3;
+                    this.vx *= 0.9;
+                    this.vy *= 0.9;
+                }
+            }
+
+            function pushBalls(count = 1, x, y) {
+                for (let i = 0; i < count; i++) {
+                    balls.push(new Ball(x, y));
+                }
+            }
+
+            function randBetween(min, max) {
+                return Math.floor(Math.random() * max) + min;
+            }
+
+            function loop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < balls.length; i++) {
+                    let b = balls[i];
+                    if (b.r < 0) continue;
+                    ctx.fillStyle = b.color;
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2, false);
+                    ctx.fill();
+                    b.update();
+                }
+                removeBall();
+                requestAnimationFrame(loop);
+            }
+
+            function removeBall() {
+                for (let i = 0; i < balls.length; i++) {
+                    let b = balls[i];
+                    if (b.x + b.r < 0 || b.x - b.r > width || b.y + b.r < 0 || b.y - b.r > height || b.r < 0) {
+                        balls.splice(i, 1);
+                    }
+                }
+            }
+        }
+        clickEffect(); //调用特效函数
     </script>
 </body>
 </html>
