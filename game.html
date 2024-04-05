@@ -10,44 +10,39 @@
             padding: 0;
             font-family: Arial, sans-serif;
             text-align: center;
-            overflow: hidden; /* 防止页面出现滚动条 */
-            color: #666; /* 文字颜色设置为中灰色 */
+            overflow: hidden;
+            color: #666;
         }
-
         #game-container {
             position: relative;
             width: 100%;
             height: 100vh;
-            overflow: hidden; /* 防止形状溢出页面 */
+            overflow: hidden;
         }
-
         #score {
             position: absolute;
             top: 10px;
             left: 10px;
-            color: #666; /* 文字颜色设置为中灰色 */
+            color: #666;
             z-index: 10;
         }
-
         #timer {
             position: absolute;
             top: 10px;
             right: 10px;
-            color: #666; /* 文字颜色设置为中灰色 */
+            color: #666;
             z-index: 10;
         }
-
         #game-over {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 24px;
-            color: #666; /* 文字颜色设置为中灰色 */
+            color: #666;
             display: none;
             z-index: 10;
         }
-
         .shape-container {
             position: absolute;
             top: 0;
@@ -55,7 +50,6 @@
             width: 100%;
             height: 100%;
         }
-
         .shape {
             position: absolute;
             cursor: pointer;
@@ -65,15 +59,12 @@
             height: 50px;
             animation: rain 3s linear infinite;
         }
-
-        .circle {
+        .circle, .square {
             border-radius: 50%;
         }
-
         .square {
             border-radius: 0%;
         }
-
         .triangle {
             width: 0;
             height: 0;
@@ -81,7 +72,6 @@
             border-right: 25px solid transparent;
             border-bottom: 50px solid red;
         }
-
         .explosion {
             position: absolute;
             width: 10px;
@@ -90,7 +80,6 @@
             border-radius: 50%;
             animation: explode 1s ease-out;
         }
-
         @keyframes rain {
             0% {
                 transform: translateY(-50px);
@@ -99,7 +88,6 @@
                 transform: translateY(100vh);
             }
         }
-
         @keyframes explode {
             0% {
                 transform: scale(1);
@@ -146,30 +134,30 @@
             shape.addEventListener('mousedown', handleClick);
             shape.addEventListener('touchstart', handleClick);
             shape.style.left = Math.random() * (window.innerWidth - 50) + 'px';
-            shape.style.top = '-50px'; /* 从顶部开始下落 */
+            shape.style.top = '-50px';
             shapeContainer.appendChild(shape);
             let duration;
             switch (randomShape) {
                 case 'circle':
-                    duration = 3000 / 1; // 根据点击得分动态调整下落速度
+                    duration = 3000;
                     break;
                 case 'square':
-                    duration = 3000 / 2;
+                    duration = 1500;
                     break;
                 case 'triangle':
-                    duration = 3000 / 3; // 将三角形速度设置为现有速度的60%
+                    duration = 1000;
                     break;
             }
-            shape.style.animation = `rain ${duration}ms linear infinite`; // 设置动画
+            shape.style.animation = `rain ${duration}ms linear infinite`;
             setTimeout(() => {
                 shape.remove();
-            }, 5000);
+            }, duration);
         }
 
-        function handleClick() {
+        function handleClick(event) {
             if (!isGameOver) {
-                const randomShape = this.classList.contains('circle') ? 'circle' : this.classList.contains('square') ? 'square' : 'triangle';
-                switch (randomShape) {
+                const shapeType = this.className.includes('circle') ? 'circle' : this.className.includes('square') ? 'square' : 'triangle';
+                switch (shapeType) {
                     case 'circle':
                         score += 10;
                         break;
@@ -183,6 +171,8 @@
                 updateScore();
                 createExplosion(this);
                 this.remove();
+                // Trigger particle effect
+                createClickParticles(event.clientX, event.clientY);
             }
         }
 
@@ -193,7 +183,7 @@
                 explosion.className = 'explosion';
                 explosion.style.left = shape.style.left;
                 explosion.style.top = shape.style.top;
-                explosion.style.animationDelay = Math.random() * 500 + 'ms'; // 随机延迟
+                explosion.style.animationDelay = Math.random() * 500 + 'ms';
                 shapeContainer.appendChild(explosion);
                 setTimeout(() => {
                     explosion.remove();
@@ -219,99 +209,60 @@
 
         const shapeInterval = setInterval(spawnShape, 1000);
         setInterval(gameLoop, 1000);
-    </script>
 
-    <script>
-        function clickEffect() {
-            let balls = [];
-            let width, height;
-            const colours = ["#F73859", "#14FFEC", "#00E0FF", "#FF99FE", "#FAF15D"];
-            const canvas = document.createElement("canvas");
-            document.body.appendChild(canvas);
-            canvas.setAttribute("style", "width: 100%; height: 100%; top: 0; left: 0; z-index: 99999; position: fixed; pointer-events: none;");
-            const pointer = document.createElement("span");
-            pointer.classList.add("pointer");
-            document.body.appendChild(pointer);
+        // Adding a canvas for the particle effects
+        const canvas = document.createElement('canvas');
+        document.body.appendChild(canvas);
+        canvas.style.position = 'fixed';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext('2d');
+        const particles = [];
 
-            if (canvas.getContext && window.addEventListener) {
-                const ctx = canvas.getContext("2d");
-                updateSize();
-                window.addEventListener('resize', updateSize, false);
-                loop();
-                window.addEventListener("mousemove", function(e) {
-                    let x = e.clientX;
-                    let y = e.clientY;
-                    pointer.style.top = y + "px";
-                    pointer.style.left = x + "px";
-                }, false);
-            } else {
-                console.log("canvas or addEventListener is unsupported!");
-            }
-
-            function updateSize() {
-                canvas.width = window.innerWidth * 2;
-                canvas.height = window.innerHeight * 2;
-                canvas.style.width = window.innerWidth + 'px';
-                canvas.style.height = window.innerHeight + 'px';
-                width = (canvas.width = window.innerWidth);
-                height = (canvas.height = window.innerHeight);
-            }
-
-            class Ball {
-                constructor(x, y) {
-                    this.x = x;
-                    this.y = y;
-                    this.angle = Math.PI * 2 * Math.random();
-                    this.multiplier = randBetween(6, 12);
-                    this.vx = (this.multiplier + Math.random() * 0.5) * Math.cos(this.angle);
-                    this.vy = (this.multiplier + Math.random() * 0.5) * Math.sin(this.angle);
-                    this.r = randBetween(8, 12) + 3 * Math.random();
-                    this.color = colours[Math.floor(Math.random() * colours.length)];
-                }
-                update() {
-                    this.x += this.vx;
-                    this.y += this.vy;
-                    this.r -= 0.3;
-                    this.vx *= 0.9;
-                    this.vy *= 0.9;
-                }
-            }
-
-            function pushBalls(count = 1, x, y) {
-                for (let i = 0; i < count; i++) {
-                    balls.push(new Ball(x, y));
-                }
-            }
-
-            function randBetween(min, max) {
-                return Math.floor(Math.random() * max) + min;
-            }
-
-            function loop() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                for (let i = 0; i < balls.length; i++) {
-                    let b = balls[i];
-                    if (b.r < 0) continue;
-                    ctx.fillStyle = b.color;
-                    ctx.beginPath();
-                    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2, false);
-                    ctx.fill();
-                    b.update();
-                }
-                removeBall();
-                requestAnimationFrame(loop);
-            }
-
-            function removeBall() {
-                for (let i = 0; i < balls.length; i++) {
-                    let b = balls[i];
-                    if (b.x + b.r < 0 || b.x - b.r > width || b.y + b.r < 0 || b.y - b.r > height || b.r < 0) {
-                        balls.splice(i, 1);
-                    }
-                }
+        function createClickParticles(x, y) {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    radius: Math.random() * 20 + 10,
+                    color: `hsl(${Math.random() * 360}, 50%, 50%)`,
+                    velocityX: (Math.random() - 0.5) * 2,
+                    velocityY: (Math.random() - 0.5) * 2,
+                    life: 1
+                });
             }
         }
-        clickEffect(); //调用特效函数
+
+        function updateParticles() {
+            particles.forEach((particle, index) => {
+                particle.x += particle.velocityX;
+                particle.y += particle.velocityY;
+                particle.life -= 0.01;
+                if (particle.life < 0) {
+                    particles.splice(index, 1);
+                }
+            });
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(particle => {
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                ctx.fillStyle = particle.color;
+                ctx.fill();
+            });
+        }
+
+        function render() {
+            updateParticles();
+            drawParticles();
+            requestAnimationFrame(render);
+        }
+
+        render();
     </script>
 </body>
 </html>
