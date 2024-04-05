@@ -210,18 +210,33 @@
             });
         }
 
-        function gameLoop() {
-            if (!isGameOver) {
-                timer--;
-                updateTimer();
-                if (timer <= 0) {
-                    gameOver();
-                }
+        function gameLoop(timestamp) {
+    if (!isGameOver) {
+        if (!start) start = timestamp;
+        var progress = timestamp - start;
+
+        // 每过1000毫秒减少1秒
+        if (progress >= 1000) {
+            timer--;
+            updateTimer();
+            start = timestamp; // 重置开始时间
+
+            if (timer <= 0) {
+                gameOver();
             }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawParticles();
-            requestAnimationFrame(gameLoop);
         }
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawParticles();
+    if (!isGameOver) {
+        requestAnimationFrame(gameLoop);
+    }
+}
+
+let start; // 在函数外部定义开始时间
+requestAnimationFrame(gameLoop);
+
 
         function gameOver() {
             isGameOver = true;
