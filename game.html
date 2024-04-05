@@ -82,12 +82,32 @@
             border-bottom: 50px solid red;
         }
 
+        .explosion {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: yellow;
+            border-radius: 50%;
+            animation: explode 1s ease-out;
+        }
+
         @keyframes rain {
             0% {
                 transform: translateY(-50px);
             }
             100% {
                 transform: translateY(100vh);
+            }
+        }
+
+        @keyframes explode {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(3);
+                opacity: 0;
             }
         }
     </style>
@@ -161,20 +181,24 @@
                         break;
                 }
                 updateScore();
-                this.remove();
                 createExplosion(this);
+                this.remove();
             }
         }
 
         function createExplosion(shape) {
-            const explosion = document.createElement('div');
-            explosion.className = 'explosion';
-            explosion.style.left = shape.style.left;
-            explosion.style.top = shape.style.top;
-            shapeContainer.appendChild(explosion);
-            setTimeout(() => {
-                explosion.remove();
-            }, 1000);
+            const explosionCount = 20;
+            for (let i = 0; i < explosionCount; i++) {
+                const explosion = document.createElement('div');
+                explosion.className = 'explosion';
+                explosion.style.left = shape.style.left;
+                explosion.style.top = shape.style.top;
+                explosion.style.animationDelay = Math.random() * 500 + 'ms'; // 随机延迟
+                shapeContainer.appendChild(explosion);
+                setTimeout(() => {
+                    explosion.remove();
+                }, 1000);
+            }
         }
 
         function gameLoop() {
