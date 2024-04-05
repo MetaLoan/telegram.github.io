@@ -186,11 +186,13 @@
 
         function createExplosion(shape) {
             const explosionCount = 20;
+            const explosionColor = window.getComputedStyle(shape).backgroundColor; // 获取形状的背景颜色
             for (let i = 0; i < explosionCount; i++) {
                 const explosion = document.createElement('div');
-                explosion.className = 'explosion ' + shape.className; // 添加相同的类名
+                explosion.className = 'explosion';
                 explosion.style.left = shape.style.left;
                 explosion.style.top = shape.style.top;
+                explosion.style.backgroundColor = explosionColor; // 使用形状的背景颜色
                 explosion.style.animationDelay = Math.random() * 500 + 'ms'; // 随机延迟
                 shapeContainer.appendChild(explosion);
                 setTimeout(() => {
