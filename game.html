@@ -11,6 +11,7 @@
             font-family: Arial, sans-serif;
             text-align: center;
             overflow: hidden; /* 防止页面出现滚动条 */
+            color: #666; /* 文字颜色设置为中灰色 */
         }
 
         #game-container {
@@ -24,7 +25,7 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            color: white;
+            color: #666; /* 文字颜色设置为中灰色 */
             z-index: 10;
         }
 
@@ -32,7 +33,7 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            color: white;
+            color: #666; /* 文字颜色设置为中灰色 */
             z-index: 10;
         }
 
@@ -42,7 +43,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 24px;
-            color: white;
+            color: #666; /* 文字颜色设置为中灰色 */
             display: none;
             z-index: 10;
         }
@@ -136,7 +137,7 @@
                     duration = 3000 / 2;
                     break;
                 case 'triangle':
-                    duration = 3000 / 5;
+                    duration = 3000 / 3; // 将三角形速度设置为现有速度的60%
                     break;
             }
             shape.style.animation = `rain ${duration}ms linear infinite`; // 设置动画
@@ -161,7 +162,19 @@
                 }
                 updateScore();
                 this.remove();
+                createExplosion(this);
             }
+        }
+
+        function createExplosion(shape) {
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            explosion.style.left = shape.style.left;
+            explosion.style.top = shape.style.top;
+            shapeContainer.appendChild(explosion);
+            setTimeout(() => {
+                explosion.remove();
+            }, 1000);
         }
 
         function gameLoop() {
