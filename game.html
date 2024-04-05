@@ -2,253 +2,132 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rain Shapes</title>
+    <title>Colorful Ball Game</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            overflow: hidden;
-            color: #666;
-        }
-
-        #game-container {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        #score {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: #666;
-            z-index: 10;
-        }
-
-        #timer {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            color: #666;
-            z-index: 10;
-        }
-
-        #game-over {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            color: #666;
-            display: none;
-            z-index: 10;
-        }
-
-        .shape-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .shape {
-            position: absolute;
-            cursor: pointer;
-            border-radius: 50%;
-            background-color: blue;
-            width: 50px;
-            height: 50px;
-            animation: rain 3s linear infinite;
-        }
-
-        .circle {
-            border-radius: 50%;
-        }
-
-        .square {
-            border-radius: 0%;
-        }
-
-        .triangle {
-            width: 0;
-            height: 0;
-            border-left: 25px solid transparent;
-            border-right: 25px solid transparent;
-            border-bottom: 50px solid red;
-        }
-
-        .explosion {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: yellow;
-            border-radius: 50%;
-            animation: explode 1s ease-out;
-        }
-
-        @keyframes rain {
-            0% {
-                transform: translateY(-50px);
-            }
-            100% {
-                transform: translateY(100vh);
-            }
-        }
-
-        @keyframes explode {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(3);
-                opacity: 0;
-            }
-        }
-
         canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            pointer-events: none;
+            border: 1px solid #000;
+            display: block;
+            margin: 0 auto;
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="score">Score: <span id="score-value">0</span></div>
-        <div id="timer">Time: <span id="timer-value">30</span></div>
-        <div id="game-over">GAME OVER</div>
-        <div class="shape-container"></div>
-    </div>
-    <canvas id="particleCanvas"></canvas>
+<canvas id="gameCanvas"></canvas>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 800;
+    canvas.height = 600;
 
-    <script>
-        const scoreText = document.getElementById('score-value');
-        const timerText = document.getElementById('timer-value');
-        const gameOverText = document.getElementById('game-over');
-        const shapeContainer = document.querySelector('.shape-container');
-        let score = 0;
-        let timer = 30;
-        let isGameOver = false;
-        const canvas = document.getElementById('particleCanvas');
-        const ctx = canvas.getContext('2d');
-        const particles = [];
+    let score = 0;
+    let timeLeft = 30; // seconds
 
-        function updateScore() {
-            scoreText.textContent = score;
-        }
+    const balls = [
+        { size: 3, color: 'red', speed: 1, score: 1 },
+        { size: 2, color: 'blue', speed: 2, score: 2 },
+        { size: 1, color: 'yellow', speed: 3, score: 3 }
+    ];
 
-        function updateTimer() {
-            timerText.textContent = timer;
-        }
+    const particles = [];
 
-        function spawnShape() {
-            const shapes = ['circle', 'square', 'triangle'];
-            const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
-            const shape = document.createElement('div');
-            shape.className = 'shape ' + randomShape;
-            shape.addEventListener('mousedown', handleClick);
-            shape.style.left = Math.random() * (window.innerWidth - 50) + 'px';
-            shape.style.top = '-50px';
-            shapeContainer.appendChild(shape);
-            setTimeout(() => {
-                shape.remove();
-            }, 5000);
-        }
+    let gameBalls = [];
 
-        function handleClick(e) {
-            if (!isGameOver) {
-                score += this.classList.contains('circle') ? 10 : this.classList.contains('square') ? 20 : 50;
-                updateScore();
-                createExplosion(this);
-                createParticles(e.clientX, e.clientY);
-                this.remove();
+    function spawnBall() {
+        const ballType = balls[Math.floor(Math.random() * balls.length)];
+        const newBall = {
+            ...ballType,
+            x: Math.random() * (canvas.width - 30) + 15,
+            y: 0,
+            opacity: 1
+        };
+        gameBalls.push(newBall);
+    }
+
+    function updateGame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Update and draw balls
+        gameBalls.forEach((ball, index) => {
+            ball.y += ball.speed;
+            ball.opacity = 1 - (ball.y / canvas.height);
+            if (ball.opacity <= 0) {
+                gameBalls.splice(index, 1);
+            } else {
+                ctx.globalAlpha = ball.opacity;
+                ctx.fillStyle = ball.color;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.size * 10, 0, Math.PI * 2);
+                ctx.fill();
             }
-        }
+        });
 
-        function createExplosion(shape) {
-            // Explosion logic remains the same
-        }
+        // Draw score and time left
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText(`Score: ${score}`, 10, 30);
+        ctx.fillText(`Time Left: ${timeLeft}`, canvas.width - 150, 30);
 
-        function updateCanvasSize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-
-        function createParticles(x, y) {
-            for (let i = 0; i < 20; i++) {
-                particles.push({
-                    x: x,
-                    y: y,
-                    dx: (Math.random() - 0.5) * 2,
-                    dy: (Math.random() - 0.5) * 2,
-                    size: Math.random() * 5 + 2,
-                    life: 30,
-                });
+        // Update particles (for explosion effect)
+        particles.forEach((particle, index) => {
+            particle.x += particle.speedX;
+            particle.y += particle.speedY;
+            particle.opacity -= 0.05;
+            if (particle.opacity <= 0) {
+                particles.splice(index, 1);
+            } else {
+                ctx.globalAlpha = particle.opacity;
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(particle.x, particle.y, 5, 5);
             }
-        }
+        });
 
-        function drawParticles() {
-            particles.forEach((particle, index) => {
-                particle.x += particle.dx;
-                particle.y += particle.dy;
-                particle.life--;
-                if (particle.life <= 0) {
-                    particles.splice(index, 1);
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(255, 255, 255, ' + (particle.life / 30) + ')';
-                    ctx.fill();
-                }
+        if (timeLeft <= 0) {
+            ctx.fillStyle = 'black';
+            ctx.font = '40px Arial';
+            ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
+            clearInterval(gameInterval);
+            clearInterval(timerInterval);
+        }
+    }
+
+    function explodeBall(ball, x, y) {
+        for (let i = 0; i < 30; i++) {
+            particles.push({
+                x: x,
+                y: y,
+                speedX: (Math.random() - 0.5) * 5,
+                speedY: (Math.random() - 0.5) * 5,
+                color: ball.color,
+                opacity: 1
             });
         }
+        score += ball.score;
+    }
 
-        function gameLoop(timestamp) {
-    if (!isGameOver) {
-        if (!start) start = timestamp;
-        var progress = timestamp - start;
+    canvas.addEventListener('click', function (event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
 
-        // 每过1000毫秒减少1秒
-        if (progress >= 1000) {
-            timer--;
-            updateTimer();
-            start = timestamp; // 重置开始时间
-
-            if (timer <= 0) {
-                gameOver();
+        gameBalls.forEach((ball, index) => {
+            const distance = Math.sqrt(Math.pow(x - ball.x, 2) + Math.pow(y - ball.y, 2));
+            if (distance < ball.size * 10) {
+                explodeBall(ball, ball.x, ball.y);
+                gameBalls.splice(index, 1);
             }
+        });
+    });
+
+    const gameInterval = setInterval(updateGame, 1000 / 60);
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
         }
-    }
+    }, 1000);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawParticles();
-    if (!isGameOver) {
-        requestAnimationFrame(gameLoop);
-    }
-}
-
-let start; // 在函数外部定义开始时间
-requestAnimationFrame(gameLoop);
-
-
-        function gameOver() {
-            isGameOver = true;
-            gameOverText.style.display = 'block';
-            clearInterval(shapeInterval);
-        }
-
-        window.addEventListener('resize', updateCanvasSize);
-        updateCanvasSize();
-
-        const shapeInterval = setInterval(spawnShape, 1000);
-        requestAnimationFrame(gameLoop);
-    </script>
+    setInterval(spawnBall, 1000);
+</script>
 </body>
 </html>
