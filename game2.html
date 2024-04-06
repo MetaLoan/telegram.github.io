@@ -76,7 +76,8 @@
     }
 
     function explodeBall(ball, x, y) {
-        for (let i = 0; i < 30; i++) {
+        const particleCount = 30;
+        for (let i = 0; i < particleCount; i++) {
             particles.push({
                 x: x,
                 y: y,
@@ -101,13 +102,15 @@
             y = event.touches[0].clientY;
         }
 
-        gameBalls.forEach((ball, index) => {
+        for (let i = gameBalls.length - 1; i >= 0; i--) {
+            const ball = gameBalls[i];
             const distance = Math.sqrt(Math.pow(x - ball.x, 2) + Math.pow(y - ball.y, 2));
             if (distance < ball.size / 2) {
                 explodeBall(ball, ball.x, ball.y);
-                gameBalls.splice(index, 1);
+                gameBalls.splice(i, 1);
+                break; // Exit the loop after the first successful hit
             }
-        });
+        }
     }
 
     function updateGame() {
@@ -115,44 +118,50 @@
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
 
         if (gameRunning) {
-            gameBalls.forEach((ball, index) => {
+            // Update balls
+            for (let i = gameBalls.length - 1; i >= 0; i--) {
+                const ball = gameBalls[i];
                 ball.y += ball.speed * speedIncreaseFactor;
                 ball.opacity = 1 - (ball.y / canvas.height);
                 if (ball.opacity <= 0) {
-                    gameBalls.splice(index, 1);
+                    gameBalls.splice(i, 1);
                 } else {
                     ctx.globalAlpha = ball.opacity;
                     ctx.drawImage(ball.image, ball.x - ball.scaledWidth / 2, ball.y - ball.scaledHeight / 2, ball.scaledWidth, ball.scaledHeight);
                 }
-            });
+            }
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.x += particle.speedX;
+                particle.y += particle.speedY;
+                particle.opacity -= 0.05;
+                if (particle.opacity <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = particle.opacity;
+                    ctx.fillStyle = particle.color;
+                    ctx.fillRect(particle.x, particle.y, 5, 5);
+                }
+            }
 
             ctx.globalAlpha = 1;
             ctx.fillStyle = fontColor;
             ctx.font = `${fontSize}px Arial`;
             ctx.fillText(`Score: ${score}`, 10, 30);
             ctx.fillText(`Time Left: ${timeLeft}`, canvas.width - 150, 30);
-
-            particles.forEach((particle, index) => {
-                particle.x += particle.speedX;
-                particle.y += particle.speedY;
-                particle.opacity -= 0.05;
-                if (particle.opacity <= 0) {
-                    particles.splice(index, 1);
-                } else {
-                    ctx.globalAlpha = particle.opacity;
-                    ctx.fillStyle = particle.color;
-                    ctx.fillRect(particle.x, particle.y, 5, 5);
-                }
-            });
         } else if (timeLeft <= 0) {
             ctx.fillStyle = fontColor;
             ctx.font = '40px Arial';
             ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
         }
+
+        requestAnimationFrame(updateGame);
     }
 
     function startGame() {
-        setInterval(updateGame, 1000 / 60);
+        updateGame();
         let spawnBallInterval = setInterval(spawnBall, 1000 / speedIncreaseFactor);
 
         const timerInterval = setInterval(() => {
