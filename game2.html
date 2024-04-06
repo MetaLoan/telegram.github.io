@@ -33,9 +33,9 @@
     const fontColor = '#808080'; // Neutral gray color for font
 
     const balls = [
-        { size: 60, speed: 1, score: 1, imageSrc: 'ballImageSrc1.png', particleColor: '#FF0000' },
-        { size: 45, speed: 2, score: 2, imageSrc: 'ballImageSrc2.png', particleColor: '#0000FF' },
-        { size: 30, speed: 3, score: 3, imageSrc: 'ballImageSrc3.png', particleColor: '#FFFF00' }
+        { size: 180, speed: 1, score: 1, imageSrc: 'ballImageSrc1.png', particleColor: '#FF0000' },
+        { size: 135, speed: 2, score: 2, imageSrc: 'ballImageSrc2.png', particleColor: '#0000FF' },
+        { size: 90, speed: 3, score: 3, imageSrc: 'ballImageSrc3.png', particleColor: '#FFFF00' }
     ];
 
     const backgroundImageSrc = 'backgroundImageSrc.jpg';
@@ -48,16 +48,16 @@
         backgroundImage = new Image();
         backgroundImage.src = backgroundImageSrc;
         backgroundImage.onload = function() {
+            const scaleRatio = Math.min(canvas.width / backgroundImage.width, canvas.height / backgroundImage.height);
+            backgroundImage.width *= scaleRatio;
+            backgroundImage.height *= scaleRatio;
             startGame();
         };
 
         balls.forEach(ball => {
             const img = new Image();
             img.onload = function() {
-                let scale = Math.min(ball.size / img.width, ball.size / img.height);
                 ball.image = img;
-                ball.scaledWidth = img.width * scale;
-                ball.scaledHeight = img.height * scale;
             };
             img.src = ball.imageSrc;
         });
@@ -65,14 +65,16 @@
 
     function spawnBall() {
         if (!gameRunning) return;
-        const ballType = balls[Math.floor(Math.random() * balls.length)];
-        const newBall = {
-            ...ballType,
-            x: Math.random() * (canvas.width - ballType.size) + ballType.size / 2,
-            y: -ballType.size,
-            opacity: 1
-        };
-        gameBalls.push(newBall);
+        for (let i = 0; i < 3; i++) {
+            const ballType = balls[Math.floor(Math.random() * balls.length)];
+            const newBall = {
+                ...ballType,
+                x: Math.random() * (canvas.width - ballType.size) + ballType.size / 2,
+                y: -ballType.size,
+                opacity: 1
+            };
+            gameBalls.push(newBall);
+        }
     }
 
     function explodeBall(ball, x, y) {
@@ -127,7 +129,7 @@
                     gameBalls.splice(i, 1);
                 } else {
                     ctx.globalAlpha = ball.opacity;
-                    ctx.drawImage(ball.image, ball.x - ball.scaledWidth / 2, ball.y - ball.scaledHeight / 2, ball.scaledWidth, ball.scaledHeight);
+                    ctx.drawImage(ball.image, ball.x - ball.size / 2, ball.y - ball.size / 2, ball.size, ball.size);
                 }
             }
 
@@ -162,7 +164,7 @@
 
     function startGame() {
         updateGame();
-        let spawnBallInterval = setInterval(spawnBall, 1000 / speedIncreaseFactor);
+        let spawnBallInterval = setInterval(spawnBall, 500 / speedIncreaseFactor);
 
         const timerInterval = setInterval(() => {
             timeLeft--;
@@ -173,7 +175,7 @@
             } else {
                 speedIncreaseFactor *= 1.02;
                 clearInterval(spawnBallInterval);
-                spawnBallInterval = setInterval(spawnBall, 1000 / speedIncreaseFactor);
+                spawnBallInterval = setInterval(spawnBall, 500 / speedIncreaseFactor);
             }
         }, 1000);
     }
