@@ -27,7 +27,7 @@
     let score = 0;
     let timeLeft = 30; // seconds
     let gameRunning = true;
-    let speedIncreaseFactor = 1;
+    let speedIncreaseFactor = 1.5; // Increase the speed by 50%
 
     const fontSize = 20; // Default font size
     const fontColor = '#808080'; // Neutral gray color for font
@@ -71,7 +71,8 @@
                 ...ballType,
                 x: Math.random() * (canvas.width - ballType.size) + ballType.size / 2,
                 y: -ballType.size,
-                opacity: 1
+                opacity: 1,
+                trailOpacity: 1
             };
             gameBalls.push(newBall);
         }
@@ -125,10 +126,13 @@
                 const ball = gameBalls[i];
                 ball.y += ball.speed * speedIncreaseFactor;
                 ball.opacity = 1 - (ball.y / canvas.height);
+                ball.trailOpacity = ball.opacity * 0.5; // Set the trail opacity to half of the ball opacity
                 if (ball.opacity <= 0) {
                     gameBalls.splice(i, 1);
                 } else {
-                    ctx.globalAlpha = ball.opacity;
+                    ctx.globalAlpha = ball.trailOpacity; // Use the trail opacity to draw the ball
+                    ctx.drawImage(ball.image, ball.x - ball.size / 2, ball.y - ball.size / 2, ball.size, ball.size);
+                    ctx.globalAlpha = ball.opacity; // Use the regular opacity to draw the ball again
                     ctx.drawImage(ball.image, ball.x - ball.size / 2, ball.y - ball.size / 2, ball.size, ball.size);
                 }
             }
