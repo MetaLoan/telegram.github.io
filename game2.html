@@ -26,6 +26,9 @@
 
     let score = 0;
     let timeLeft = 30; // seconds
+    let gameRunning = true;
+    let speedIncreaseFactor = 1;
+
     const fontSize = 20; // Default font size
     const fontColor = '#808080'; // Neutral gray color for font
 
@@ -45,7 +48,6 @@
         backgroundImage = new Image();
         backgroundImage.src = backgroundImageSrc;
         backgroundImage.onload = function() {
-            // Ensure the background image is loaded before starting the game
             startGame();
         };
 
@@ -62,6 +64,7 @@
     }
 
     function spawnBall() {
+        if (!gameRunning) return;
         const ballType = balls[Math.floor(Math.random() * balls.length)];
         const newBall = {
             ...ballType,
@@ -87,6 +90,8 @@
     }
 
     function handleInteraction(event) {
+        if (!gameRunning) return;
+
         let x, y;
         if (event.type === 'click') {
             x = event.clientX;
@@ -106,57 +111,59 @@
     }
 
     function updateGame() {
-        // Draw background image
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
 
-        // Update and draw balls
-        gameBalls.forEach((ball, index) => {
-            ball.y += ball.speed;
-            ball.opacity = 1 - (ball.y / canvas.height);
-            if (ball.opacity <= 0) {
-                gameBalls.splice(index, 1);
-            } else {
-                ctx.globalAlpha = ball.opacity;
-                ctx.drawImage(ball.image, ball.x - ball.scaledWidth / 2, ball.y - ball.scaledHeight / 2, ball.scaledWidth, ball.scaledHeight);
-            }
-        });
+        if (gameRunning) {
+            gameBalls.forEach((ball, index) => {
+                ball.y += ball.speed * speedIncreaseFactor;
+                ball.opacity = 1 - (ball.y / canvas.height);
+                if (ball.opacity <= 0) {
+                    gameBalls.splice(index, 1);
+                } else {
+                    ctx.globalAlpha = ball.opacity;
+                    ctx.drawImage(ball.image, ball.x - ball.scaledWidth / 2, ball.y - ball.scaledHeight / 2, ball.scaledWidth, ball.scaledHeight);
+                }
+            });
 
-        // Draw score and time left
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = fontColor;
-        ctx.font = `${fontSize}px Arial`;
-        ctx.fillText(`Score: ${score}`, 10, 30);
-        ctx.fillText(`Time Left: ${timeLeft}`, canvas.width - 150, 30);
-
-        // Update particles
-        particles.forEach((particle, index) => {
-            particle.x += particle.speedX;
-            particle.y += particle.speedY;
-            particle.opacity -= 0.05;
-            if (particle.opacity <= 0) {
-                particles.splice(index, 1);
-            } else {
-                ctx.globalAlpha = particle.opacity;
-                ctx.fillStyle = particle.color;
-                ctx.fillRect(particle.x, particle.y, 5, 5);
-            }
-        });
-
-        if (timeLeft <= 0) {
+            ctx.globalAlpha = 1;
             ctx.fillStyle = fontColor;
-            ctx.font = '40px Arial';
-            ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
-            clearInterval(gameInterval);
+            ctx.font = `${fontSize}px Arial`;
+            ctx.fillText(`Score: ${score}`, 10, 30);
+            ctx.fillText(`Time Left: ${timeLeft}`, canvas.width - 150, 30);
+
+            particles.forEach((particle, index) => {
+                particle.x += particle.speedX;
+                particle.y += particle.speedY;
+                particle.opacity -= 0.05;
+                if (particle.opacity <= 0) {
+                    particles.splice(index, 1);
+                } else {
+                    ctx.globalAlpha = particle.opacity;
+                    ctx.fillStyle = particle.color;
+                    ctx.fillRect(particle.x, particle.y, 5, 5);
+                }
+            });
         }
     }
 
     function startGame() {
+        gameRunning = true;
         setInterval(updateGame, 1000 / 60);
-        setInterval(spawnBall, 1000);
+        let spawnBallInterval = setInterval(spawnBall, 1000 / speedIncreaseFactor);
+
         const timerInterval = setInterval(() => {
             timeLeft--;
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
+                clearInterval(spawnBallInterval);
+                gameRunning = false;
+                canvas.removeEventListener('click', handleInteraction);
+                canvas.removeEventListener('touchstart', handleInteraction);
+            } else {
+                speedIncreaseFactor *= 1.02;
+                clearInterval(spawnBallInterval);
+                spawnBallInterval = setInterval(spawnBall, 1000 / speedIncreaseFactor);
             }
         }, 1000);
     }
