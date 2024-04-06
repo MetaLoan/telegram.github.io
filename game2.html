@@ -33,9 +33,9 @@
     const fontColor = '#808080'; // Neutral gray color for font
 
     const balls = [
-        { size: 180, speed: 1, score: 1, imageSrc: 'ballImageSrc1.png', particleColor: '#FF0000' },
-        { size: 135, speed: 2, score: 2, imageSrc: 'ballImageSrc2.png', particleColor: '#0000FF' },
-        { size: 90, speed: 3, score: 3, imageSrc: 'ballImageSrc3.png', particleColor: '#FFFF00' }
+        { size: 180, speed: 1, speedVariance: 0.5, score: 1, imageSrc: 'ballImageSrc1.png', particleColor: '#FF0000' },
+        { size: 135, speed: 2, speedVariance: 0.5, score: 2, imageSrc: 'ballImageSrc2.png', particleColor: '#0000FF' },
+        { size: 90, speed: 3, speedVariance: 0.5, score: 3, imageSrc: 'ballImageSrc3.png', particleColor: '#FFFF00' }
     ];
 
     const backgroundImageSrc = 'backgroundImageSrc.jpg';
@@ -72,7 +72,8 @@
                 x: Math.random() * (canvas.width - ballType.size) + ballType.size / 2,
                 y: -ballType.size,
                 opacity: 1,
-                trailOpacity: 1
+                trailOpacity: 1,
+                speed: ballType.speed * (1 + (Math.random() * 2 * ballType.speedVariance - ballType.speedVariance)) // Add random speed variance
             };
             gameBalls.push(newBall);
         }
